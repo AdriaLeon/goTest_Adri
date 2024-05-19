@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"math/rand"
 	"net/http"
 	"os"
@@ -24,6 +25,9 @@ func main() {
 	if err := http.ListenAndServe(":8080", nil); err != nil {
 		fmt.Println("Error starting server:", err)
 	}
+
+	// Handle upload of files requests
+	http.HandleFunc("/upload", HandleUploadFile)
 }
 
 type Instrument struct {
@@ -144,4 +148,39 @@ func HandleGenerateJSON(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("JSON file successfully created"))
+}
+
+func HandleUploadFile(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseMultipartForm(10 << 20) // Max size of 10MB
+	if err != nil {
+		http.Error(w, "Error parsing form: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Extracts the file from the form
+	file, _, err := r.FormFile("file")
+	if err != nil {
+		http.Error(w, "Error extracting file: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer file.Close()
+
+	// Saves file on test_uploads TODO: Tendría que crear un carpeta uploads para guardarlo?
+	fileName := filepath.Join(".", "uploads", "test_uploads")
+	outFile, err := os.Create(fileName)
+	if err != nil {
+		http.Error(w, "Error creating file: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer outFile.Close()
+
+	// Copies the file on the outFile
+	_, err = io.Copy(outFile, file)
+	if err != nil {
+		http.Error(w, "Error copying file: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Sends the answer to the client
+	fmt.Fprintf(w, "File uploaded successfully: %s", "test_uploads")
 }
