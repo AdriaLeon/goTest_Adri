@@ -8,17 +8,28 @@
     <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://unpkg.com/htmx.org@1.9.12"></script>
     <style>
-        /* CSS to vertically center the image */
-        .center-image {
-            display: flex;
-            justify-content: center;
-            margin-bottom: 20px; /* Added margin for better spacing */
+        .image-container {
+            position: relative;
+            width: 1000px;
+            height: 600px;
+            overflow-x: scroll;
+            white-space: nowrap;
+            margin: auto;
+            border: 1px solid #1a1818;
+        }
+        .image-container img {
+            width: 100%;
+            height: 100%;
+            display: inline-block;
         }
 
         /* CSS to center the button */
         .center-button {
             display: flex;
             justify-content: center;
+        }
+                .audio-container {
+            text-align: center;
         }
     </style>
 </head>
@@ -27,15 +38,24 @@
         <h1 class="text-center">Carnatic Music Instrument Classification</h1>
         <p class="text-center">Adrià León, Jinsong Liu, Juande Gutiérrez, Laia Marinello, Raquel Maldonado</p>
 
-        <!-- Div to center the image -->
-        <div class="center-image">
-            <img id="output-image" src="./output.png" alt="Intervals">
+        <div class="audio-container">
+            <audio controls>
+                <source src="./Koti Janmani.mp3.mp3" type="audio/mpeg">
+                Your browser does not support the audio element.
+            </audio>
         </div>
+
+        <div class="image-container" id="output-images">
+            <a href="./output.html">
+                <img id="output-image" src="./output.png" alt="Intervals">
+            </a>
+            <img id="sound-wave" src="./sound_wave.png" alt="sound_wave">
+        </div> 
 
         <!-- Div to center the button -->
         <div class="center-button">
             <!-- Modified button to trigger both Go function and Python script -->
-            <button id="generate-btn" hx-post="/generate-json" hx-trigger="click" hx-target="#output-image" hx-swap="outerHTML" class="btn btn-primary mt-3">Generate Image</button>
+            <button id="generate-btn" hx-post="/generate-json" hx-trigger="click" hx-target="#output-images" hx-swap="outerHTML" class="btn btn-primary mt-3">Generate Image</button>
         </div>
 
         <!-- Form to upload files -->

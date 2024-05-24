@@ -30,13 +30,17 @@ func main() {
 	http.HandleFunc("/upload", HandleUploadFile)
 }
 
-type Instrument struct {
-	Name      string `json:"name"`
-	Intervals []bool `json:"intervals"`
-}
-
-type CarnaticData struct {
-	Instruments []Instrument `json:"instruments"`
+// AudioData represents the structure of the audio data
+type AudioData struct {
+	ID          int       `json:"id"`
+	FileName    string    `json:"file_name"`
+	SR          int       `json:"sr"`
+	ArrayLength int       `json:"arrayLength"`
+	AudioArray  []float64 `json:"audio_array"`
+	IsVoice     []bool    `json:"is_voice"`
+	IsViolin    []bool    `json:"is_violin"`
+	IsMridangam []bool    `json:"is_mridangam"`
+	IsGhatam    []bool    `json:"is_ghatam"`
 }
 
 func HandleGenerateJSONAndCallPythonScript(w http.ResponseWriter, r *http.Request) {
@@ -59,22 +63,39 @@ func HandleGenerateJSONAndCallPythonScript(w http.ResponseWriter, r *http.Reques
 	// Optionally, you can send a success status code
 	w.WriteHeader(http.StatusOK)
 
-	fmt.Fprintf(w, `<img id="output-image" src="./output.png?t=%d" alt="Intervals">`, time.Now().Unix())
+	response := fmt.Sprintf(`
+		<div id="output-images" class="image-container">
+			<a href="./output.html">
+				<img id="output-image" src="./output.png?t=%d" alt="Intervals">
+			</a>
+			<img id="sound-wave" src="./sound_wave.png?t=%d" alt="sound_wave">
+		</div>`, time.Now().Unix(), time.Now().Unix())
+
+	fmt.Fprint(w, response)
 }
 
-func GenerateAndWriteJSON(fileName string) error {
-	// Seed the random number generator
+// generateRandomBoolArray generates an array of random boolean values
+func generateRandomBoolArray(length int) []bool {
 	rand.NewSource(time.Now().UnixNano())
-
-	// Helper function to generate random boolean intervals
-	generateRandomIntervals := func(length int) []bool {
-		intervals := make([]bool, length)
-		for i := range intervals {
-			intervals[i] = rand.Intn(2) == 1
-		}
-		return intervals
+	boolArray := make([]bool, length)
+	for i := range boolArray {
+		boolArray[i] = rand.Intn(2) == 1
 	}
+	return boolArray
+}
 
+// generateRandomFloatArray generates an array of random float64 values
+func generateRandomFloatArray(length int) []float64 {
+	rand.NewSource(time.Now().UnixNano())
+	floatArray := make([]float64, length)
+	for i := range floatArray {
+		floatArray[i] = rand.Float64()
+	}
+	return floatArray
+}
+
+// GenerateAndWriteJSON generates the audio data with random values and writes it to a JSON file
+func GenerateAndWriteJSON(fileName string) error {
 	// Define the directory for storing data files
 	directory := "data"
 
@@ -93,38 +114,24 @@ func GenerateAndWriteJSON(fileName string) error {
 	}
 	defer file.Close()
 
-	// Define the Carnatic instruments with random boolean intervals
-	data := CarnaticData{
-		Instruments: []Instrument{
-			{
-				Name:      "Veena",
-				Intervals: generateRandomIntervals(10),
-			},
-			{
-				Name:      "Mridangam",
-				Intervals: generateRandomIntervals(10),
-			},
-			{
-				Name:      "Flute",
-				Intervals: generateRandomIntervals(10),
-			},
-			{
-				Name:      "Violin",
-				Intervals: generateRandomIntervals(10),
-			},
-			{
-				Name:      "Kanjira",
-				Intervals: generateRandomIntervals(10),
-			},
-			{
-				Name:      "Ghatam",
-				Intervals: generateRandomIntervals(10),
-			},
-		},
+	// Define the length of the arrays
+	arrayLength := 1000
+
+	// Create an instance of AudioData with random values
+	audioData := AudioData{
+		ID:          0,
+		FileName:    "performance1mixed.wav",
+		SR:          44100,
+		ArrayLength: arrayLength,
+		AudioArray:  generateRandomFloatArray(arrayLength),
+		IsVoice:     generateRandomBoolArray(arrayLength),
+		IsViolin:    generateRandomBoolArray(arrayLength),
+		IsMridangam: generateRandomBoolArray(arrayLength),
+		IsGhatam:    generateRandomBoolArray(arrayLength),
 	}
 
-	// Convert the data to JSON
-	jsonData, err := json.MarshalIndent(data, "", "  ")
+	// Convert the AudioData instance to JSON
+	jsonData, err := json.MarshalIndent(audioData, "", "  ")
 	if err != nil {
 		return fmt.Errorf("error marshalling to JSON: %v", err)
 	}
